@@ -5,18 +5,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
 public class Game {
 
   private Hero mainHero; // mainHero - главный персонаж игры
-  private List<Room> rooms = new ArrayList<>();
+//  private List<Room> rooms = new ArrayList<>();
+
   private Room current;
   private Map<String, Command> commands = new HashMap<>();
+  public QuestMap roomMap = new QuestMap();
 
   public Game() {
-    rooms.add(new Room("Зал"));
-    rooms.add(new Room("Кухня"));
-    rooms.add(new Room("Туалет"));
-    rooms.add(new Room("Коридор"));
+
+    roomMap.setRowSize(2);
+    roomMap.setColumnSize(3);
+    roomMap.createMap();
+    roomMap.setQuestRoom(0, 1, new Room("Зал"));
+    roomMap.setQuestRoom(1, 2, new Room("Кухня"));
+    roomMap.setQuestRoom(1, 0, new Room("Туалет"));
+    roomMap.setQuestRoom(1, 1, new Room("Коридор"));
+    current = roomMap.getQuestRoom(0, 1);
+//    System.out.println(current.getTitle());
+//    roomMap.getCoordinates(current.getTitle());
 
     commands.put("вперёд", Command.FORWARD);
     commands.put("вперед", Command.FORWARD); // так можно, но тогда её два раза выведет help()
@@ -25,6 +35,45 @@ public class Game {
     commands.put("вправо", Command.RIGHT);
     commands.put("выход", Command.EXIT);
     commands.put("справка", Command.HELP);
+  }
+
+  public boolean checkMove(Command command) {
+    int[] coordinates = roomMap.getCoordinates(current.getTitle());
+    int row = coordinates[0];
+    int column = coordinates[1];
+    boolean movePossible = false;
+
+    switch (command) {
+      case FORWARD -> {
+        if (row + 1 < roomMap.getRowSize()) {
+          if (!roomMap.getQuestRoom(row + 1, column).getTitle().equals("empty")) {
+            movePossible = true;
+          }
+        }
+      }
+      case BACK -> {
+        if (row - 1 >= 0) {
+          if (!roomMap.getQuestRoom(row - 1, column).getTitle().equals("empty")) {
+            movePossible = true;
+          }
+        }
+      }
+      case LEFT -> {
+        if (column + 1 < roomMap.getColumnSize()) {
+          if (!roomMap.getQuestRoom(row, column + 1).getTitle().equals("empty")) {
+            movePossible = true;
+          }
+        }
+      }
+      case RIGHT -> {
+        if (column - 1 >= 0) {
+          if (!roomMap.getQuestRoom(row, column - 1).getTitle().equals("empty")) {
+            movePossible = true;
+          }
+        }
+      }
+    }
+    return movePossible;
   }
 
   public void start(BufferedReader br) throws IOException {
@@ -47,25 +96,62 @@ public class Game {
   }
 
   private void mainCycle(BufferedReader br) throws IOException {
+
     boolean playing = true; // "продолжать ли игровой цикл"
     while (playing) {
       Command command = readCommand(br);
       switch (command) {
         case FORWARD -> {
-          mainHero.move();
-          System.out.println("Вы шагнули вперёд");
+          if (!checkMove(command)) {
+            System.out.println("Вы не можете пойти вперёд");
+          } else {
+            int[] coordinates = roomMap.getCoordinates(current.getTitle());
+            ++coordinates[0];
+            current = roomMap.getQuestRoom(coordinates[0], coordinates[1]);
+            mainHero.move();
+            String newRoom = current.getTitle();
+            System.out.println("Вы шагнули вперёд");
+            System.out.println("Теперь вы попали в " + newRoom);
+          }
         }
         case BACK -> {
-          mainHero.move();
-          System.out.println("Вы шагнули назад");
+          if (!checkMove(command)) {
+            System.out.println("Вы не можете пойти назад");
+          } else {
+            int[] coordinates = roomMap.getCoordinates(current.getTitle());
+            --coordinates[0];
+            current = roomMap.getQuestRoom(coordinates[0], coordinates[1]);
+            mainHero.move();
+            String newRoom = current.getTitle();
+            System.out.println("Вы шагнули назад");
+            System.out.println("Теперь вы попали в " + newRoom);
+          }
         }
         case LEFT -> {
-          mainHero.move();
-          System.out.println("Вы шагнули влево");
+          if (!checkMove(command)) {
+            System.out.println("Вы не можете пойти влево");
+          } else {
+            int[] coordinates = roomMap.getCoordinates(current.getTitle());
+            ++coordinates[1];
+            current = roomMap.getQuestRoom(coordinates[0], coordinates[1]);
+            mainHero.move();
+            String newRoom = current.getTitle();
+            System.out.println("Вы шагнули влево");
+            System.out.println("Теперь вы попали в " + newRoom);
+          }
         }
         case RIGHT -> {
-          mainHero.move();
-          System.out.println("Вы шагнули вправо");
+          if (!checkMove(command)) {
+            System.out.println("Вы не можете пойти вправо");
+          } else {
+            int[] coordinates = roomMap.getCoordinates(current.getTitle());
+            --coordinates[1];
+            current = roomMap.getQuestRoom(coordinates[0], coordinates[1]);
+            mainHero.move();
+            String newRoom = current.getTitle();
+            System.out.println("Вы шагнули вправо");
+            System.out.println("Теперь вы попали в " + newRoom);
+          }
         }
         case EXIT -> {
           System.out.println("До свидания!");
